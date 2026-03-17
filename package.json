@@ -1,0 +1,8 @@
+{
+  "name": "zh-pentest-app",
+  "version": "1.0.0",
+  "description": "App using zh-design-tokens",
+  "dependencies": {
+    "@aksharfederacy2/zh-design-tokens": "^1.0.0"
+  }
+}
