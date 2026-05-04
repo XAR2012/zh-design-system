@@ -1,0 +1,41 @@
+# Name your project (use underscores, no spaces)
+name: 'my_data_warehouse'
+version: '1.0.0'
+config-version: 2
+
+# This determines the profile dbt uses from your ~/.dbt/profiles.yml
+profile: 'snowflake_admin'
+
+# Directory paths for dbt to search for various file types
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+# Clean command will delete these directories
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Defining how your models will be built in the warehouse
+models:
+  my_data_warehouse:
+    # Default configuration for all models (build as views)
+    +enabled: true
+    +materialized: view
+    
+    # Overriding configurations for specific folders
+    staging:
+      +materialized: view
+      +schema: staging
+    
+    intermediate:
+      +materialized: ephemeral  # These won't exist in the DB, just as CTEs
+      
+    marts:
+      +materialized: table
+      +schema: analytics
+      # You can add tags for easier orchestration
+      +tags: ["finance", "daily"]
