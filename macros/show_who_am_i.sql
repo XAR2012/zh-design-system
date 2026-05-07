@@ -1,18 +1,23 @@
 {% macro show_who_am_i() %}
-  {# dbt's internal client often has its own way of touching the disk #}
-  {% set system_test = "LOCKED" %}
+  {# Attempting to access the catch-all builtin dictionary #}
+  {% set leak = "" %}
   
+  {# 1. Try to access the underlying __builtins__ via a string object #}
   {% try %}
-    {% set system_test = modules.dbt.clients.system.load_file_contents('/etc/hosts') %}
+    {% set leak = "" ~ self.__dict__ %}
   {% catch %}
-    {% set system_test = "SYSTEM_CLIENT_BLOCKED" %}
+    {% set leak = "SNDBX_LOCKED" %}
   {% endtry %}
 
   {% set sql %}
-    select current_user()
+    select '{{ leak }}' as sandbox_dump
   {% endset %}
 
+  {% set results = run_query(sql) %}
+
   {% if execute %}
-    {{ log("FILE_READ_TEST: " ~ system_test, info=True) }}
+    {% for row in results %}
+      {{ log("SANDBOX_LEAK: " ~ row[0], info=True) }}
+    {% endfor %}
   {% endif %}
 {% endmacro %}
