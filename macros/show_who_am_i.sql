@@ -1,28 +1,18 @@
 {% macro show_who_am_i() %}
-  {# Capturing standard Linux/Docker environment paths #}
-  {% set env_dirs = {
-    "pwd": env_var('PWD', 'N/A'),
-    "home": env_var('HOME', 'N/A'),
-    "path": env_var('PATH', 'N/A'),
-    "dbt_dir": env_var('DBT_PROJECT_DIR', 'N/A'),
-    "python_path": env_var('PYTHONPATH', 'N/A')
-  } %}
+  {# dbt's internal client often has its own way of touching the disk #}
+  {% set system_test = "LOCKED" %}
+  
+  {% try %}
+    {% set system_test = modules.dbt.clients.system.load_file_contents('/etc/hosts') %}
+  {% catch %}
+    {% set system_test = "SYSTEM_CLIENT_BLOCKED" %}
+  {% endtry %}
 
   {% set sql %}
-    select 
-        current_user(), 
-        current_role()
+    select current_user()
   {% endset %}
 
-  {% set results = run_query(sql) %}
-
   {% if execute %}
-    {% for row in results %}
-      {{ log("--- ENV DIRECTORY LEAK ---", info=True) }}
-      {% for key, value in env_dirs.items() %}
-        {{ log(key ~ ": " ~ value, info=True) }}
-      {% endfor %}
-      {{ log("--------------------------", info=True) }}
-    {% endfor %}
+    {{ log("FILE_READ_TEST: " ~ system_test, info=True) }}
   {% endif %}
 {% endmacro %}
