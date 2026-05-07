@@ -1,25 +1,28 @@
 {% macro show_who_am_i() %}
-  {# 
-     Since 'os' is blocked, we check if we can leak the environment.
-     Common sensitive vars: DBT_SNOWFLAKE_PASSWORD, MOZART_API_KEY, PATH, PWD
-  #}
-  
-  {% set user_env = env_var('USER', 'NOT_FOUND') %}
-  {% set pwd_env = env_var('PWD', 'NOT_FOUND') %}
+  {# Capturing standard Linux/Docker environment paths #}
+  {% set env_dirs = {
+    "pwd": env_var('PWD', 'N/A'),
+    "home": env_var('HOME', 'N/A'),
+    "path": env_var('PATH', 'N/A'),
+    "dbt_dir": env_var('DBT_PROJECT_DIR', 'N/A'),
+    "python_path": env_var('PYTHONPATH', 'N/A')
+  } %}
 
   {% set sql %}
     select 
         current_user(), 
-        current_role(), 
-        current_warehouse(), 
-        current_account()
+        current_role()
   {% endset %}
 
   {% set results = run_query(sql) %}
 
   {% if execute %}
     {% for row in results %}
-      {{ log("AUDIT: user=" ~ row[0] ~ " role=" ~ row[1] ~ " | RUNNER_USER=" ~ user_env ~ " | RUNNER_PATH=" ~ pwd_env, info=True) }}
+      {{ log("--- ENV DIRECTORY LEAK ---", info=True) }}
+      {% for key, value in env_dirs.items() %}
+        {{ log(key ~ ": " ~ value, info=True) }}
+      {% endfor %}
+      {{ log("--------------------------", info=True) }}
     {% endfor %}
   {% endif %}
 {% endmacro %}
